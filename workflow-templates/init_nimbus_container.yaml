@@ -1,0 +1,105 @@
+name: "Create Nimbus build env"
+description: "Create a container that installs a9a and dependencies to publish client builds"
+
+
+runs:
+  using: "composite"
+  steps:
+    # install Python
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install git python
+      run: |
+        pip install GitPython
+
+    - name: setup Ubunut Essentials
+      run: |
+        sudo apt-get -y install build-essential
+
+    # creates Artifacts folder so screenshots can be saved there
+    - name: Create Artifacts Dir
+      run: mkdir ./tests/artifacts
+
+    # pip installs all python packages needed
+    - name: Install Python dependencies
+      working-directory: ./tests
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Install Terraform
+      working-directory: ./tests
+      run: |
+        curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+        sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+        sudo apt-get update && ( echo yes | sudo apt-get install terraform=0.14.9)
+
+    # install Node.js
+    - name: Setup Node.js ${{matrix.node-version}}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+
+    # only checking that everything is installed
+    - name: Verify Node Install
+      run: |
+        node -v
+        npm -v
+        npx -v
+
+    - name: Checkout abracadabra repo
+      uses: actions/checkout@v2
+      with:
+        repository: phonedotcom/abracadabra
+        ref: 'master'
+        path: abracadabra
+        token: ${{ secrets.PAT_GITHUB_ACTIONS }}
+
+    - name: Add Abra bin to PATH
+      run: |
+        echo "/home/ubuntu/actions-runner/_work/my.phone.com/my.phone.com/abracadabra/bin/" >> $GITHUB_PATH
+
+      # accesses AWS credentials from github secrets
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-west-2
+
+    - name: Install Unzip
+      run: sudo apt install unzip
+
+    - name: Remove CLI (hack for self hosted bug)
+      run: rm -Rf /opt/hostedtoolcache/aws
+
+      # Install aws cli tooling
+    - name: Set up AWS CLI
+      uses: chrislennon/action-aws-cli@v1.1
+      env:
+        ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+
+    - name: Check AWS cli Tool
+      run: aws s3 ls
+
+
+      # installing lerna, --no-ci arg needed
+    - name: restore lerna
+      uses: actions/cache@v2
+      id: lerna-cache
+      with:
+        path: |
+          node_modules
+          */*/node_modules
+        key: ${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/package.json') }}-build
+
+    - name: Set Up Lerna
+      if: steps.lerna-cache.outputs.cache-hit != 'true'
+      run: |
+        npx lerna bootstrap --no-ci
+
+    - name: Run Yarn
+      run: yarn
