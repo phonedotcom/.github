@@ -1,12 +1,3 @@
-## Hi there 👋
+## phone.com
 
-<!--
-
-**Here are some ideas to get you started:**
-
-🙋‍♀️ A short introduction - what is your organization all about?
-🌈 Contribution guidelines - how can the community get involved?
-👩‍💻 Useful resources - where can the community find your docs? Is there anything else the community should know?
-🍿 Fun facts - what does your team eat for breakfast?
-🧙 Remember, you can do mighty things with the power of [Markdown](https://docs.github.com/github/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax)
--->
+Phone.com is the modern, work-from-anywhere solution for today’s agile, mobile, and always-on entrepreneurs and growing businesses. Learn how you can get an [advanced phone system](https://www.phone.com/business-phone-systems/) without the high costs or complexity.
